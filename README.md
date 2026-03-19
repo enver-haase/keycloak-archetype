@@ -14,7 +14,8 @@ A Maven archetype for generating Vaadin 25.1.0-beta3 applications with Keycloak 
 - **`@RequiresOrganization` annotation**: restrict views to a specific organization with nav filtering, route guards, and auto-redirect on org switch
 - **`@RolesAllowed` with Keycloak realm roles**: admin views secured by Spring Security, with a `GrantedAuthoritiesMapper` that maps Keycloak's `roles` claim to `ROLE_` authorities
 - **Docker Compose** setup with Keycloak and pre-configured realm with test users
-- **TestBench integration tests**: 15 tests covering login, org access, role access; run headed or headless
+- **Internationalization (i18n)**: zero-config `DefaultI18NProvider` with English, German, and Italian translations; language follows the browser locale automatically
+- **TestBench integration tests**: 15 locale-independent tests covering login, org access, role access; run headed or headless
 
 ## Prerequisites
 
@@ -187,6 +188,14 @@ TestBench is Vaadin's official testing framework. Key advantages for Vaadin apps
 
 The tests use `--headless=new` Chrome mode for CI (the modern headless mode that uses the full rendering engine, unlike the legacy `--headless` which had issues with overlay rendering).
 
+### Why `DefaultI18NProvider` with no configuration?
+
+Since Vaadin 24.3, the `DefaultI18NProvider` detects `translations*.properties` files in `src/main/resources/vaadin-i18n/` at startup and registers itself automatically. No `@Bean`, no `I18NProvider` implementation, no `application.properties` entry. Adding a new language is just creating a new file — zero code changes.
+
+### Why are tests locale-independent?
+
+The browser's `Accept-Language` header determines the UI language. On a German system, buttons say "Weiter" not "Continue". Tests that assert on translated text break when run on a different locale. Instead, the tests find buttons by `id` attribute, nav items by `path` attribute, and check navigation success by URL — none of which change with locale.
+
 ### Why `@BeforeEach`/`@AfterEach` driver management instead of `BrowserTestBase`?
 
 TestBench's `BrowserTestBase` (JUnit 5/6) manages the driver lifecycle and provides `@BrowserTest`. However, combining it with `@SpringBootTest` for auto-starting the app is complex. Managing the `ChromeDriver` manually in `@BeforeEach`/`@AfterEach` while extending `TestBenchTestCase` (for `$()` queries) gives full control over headless flags, window size, and driver options without framework conflicts.
@@ -270,6 +279,56 @@ Nav items can also be role-filtered by adding a `requiredRole` to the `NavEntry`
 ```java
 new NavEntry("Admin", "admin", null, "ADMIN")  // null org = any org, "ADMIN" = requires ADMIN role
 ```
+
+## Internationalization (i18n)
+
+The app uses Vaadin's zero-config `DefaultI18NProvider`. No beans, no properties, no registration — just drop translation files in `src/main/resources/vaadin-i18n/` and Vaadin picks them up automatically.
+
+### Included languages
+
+| File | Language |
+|------|----------|
+| `translations.properties` | English (default) |
+| `translations_de.properties` | German |
+| `translations_it.properties` | Italian |
+
+The active language is determined by the browser's `Accept-Language` header. A German browser sees "Abmelden", "Übersicht", "Weiter"; an Italian browser sees "Esci", "Pannello", "Continua".
+
+### Using translations in views
+
+All Vaadin components inherit `getTranslation()`:
+
+```java
+add(new H2(getTranslation("dashboard.welcome", authenticatedUser.getDisplayName())));
+// English: "Welcome, Alice Smith"
+// German:  "Willkommen, Alice Smith"
+// Italian: "Benvenuto, Alice Smith"
+```
+
+The `{0}`, `{1}`, ... placeholders use standard `java.text.MessageFormat` syntax.
+
+### Adding a new language
+
+Create `src/main/resources/vaadin-i18n/translations_fr.properties` (or any locale code). Vaadin detects it at startup — no code changes needed.
+
+### Adding a new translation key
+
+1. Add the key to all `translations*.properties` files
+2. Use `getTranslation("your.key")` in Java
+
+### Translation keys used
+
+All keys are prefixed by feature area:
+
+| Prefix | Used by |
+|--------|---------|
+| `app.*` | MainLayout (logout button) |
+| `nav.*` | Side navigation item labels |
+| `org.select.*` | Organization selector view |
+| `dashboard.*` | Dashboard view |
+| `blue-stock.*` | Blue Stock view and grid columns |
+| `green-employees.*` | Green Employees view and grid columns |
+| `admin.*` | Admin view and grid columns |
 
 ## Integration Tests
 
