@@ -1,6 +1,7 @@
 package ${package}.security;
 
 import com.vaadin.flow.spring.security.AuthenticationContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Component;
 
@@ -53,6 +54,13 @@ public class AuthenticatedUser {
             }
             return Collections.<String>emptyList();
         }).orElse(Collections.emptyList());
+    }
+
+    public boolean hasRole(String role) {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null) return false;
+        return auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_" + role));
     }
 
     public void logout() {

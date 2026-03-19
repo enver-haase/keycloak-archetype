@@ -34,24 +34,30 @@ public class MainLayout extends AppLayout implements BeforeEnterObserver, AfterN
             "#a5b4fc", // indigo
     };
 
-    private record NavEntry(String label, String route, String requiredOrg) {
+    private record NavEntry(String label, String route, String requiredOrg, String requiredRole) {
         NavEntry(String label, String route) {
-            this(label, route, null);
+            this(label, route, null, null);
+        }
+        NavEntry(String label, String route, String requiredOrg) {
+            this(label, route, requiredOrg, null);
         }
     }
 
     private static final List<NavEntry> NAV_ENTRIES = List.of(
             new NavEntry("Dashboard", ""),
             new NavEntry("Blue Stock", "blue-stock", "Blue Corp"),
-            new NavEntry("Green Employees", "green-employees", "Green Inc")
+            new NavEntry("Green Employees", "green-employees", "Green Inc"),
+            new NavEntry("Admin", "admin", null, "ADMIN")
     );
 
+    private final AuthenticatedUser authenticatedUser;
     private final OrganizationService organizationService;
     private final Select<Organization> orgSelector;
     private final SideNav nav;
 
     public MainLayout(AuthenticatedUser authenticatedUser,
                       OrganizationService organizationService) {
+        this.authenticatedUser = authenticatedUser;
         this.organizationService = organizationService;
 
         DrawerToggle toggle = new DrawerToggle();
@@ -104,7 +110,11 @@ public class MainLayout extends AppLayout implements BeforeEnterObserver, AfterN
         String selectedOrg = organizationService.getSelectedOrganization()
                 .map(Organization::name).orElse("");
         for (NavEntry entry : NAV_ENTRIES) {
-            if (entry.requiredOrg() == null || entry.requiredOrg().equals(selectedOrg)) {
+            boolean orgMatch = entry.requiredOrg() == null
+                    || entry.requiredOrg().equals(selectedOrg);
+            boolean roleMatch = entry.requiredRole() == null
+                    || authenticatedUser.hasRole(entry.requiredRole());
+            if (orgMatch && roleMatch) {
                 nav.addItem(new SideNavItem(entry.label(), entry.route()));
             }
         }
