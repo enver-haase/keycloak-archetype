@@ -11,6 +11,7 @@ A Maven archetype for generating Vaadin 25.1.0-beta3 applications with Keycloak 
 - **Multi-organization support**: reads an `organizations` claim (or `groups` fallback) from the ID token; if the user belongs to multiple organizations, a selector view is shown after login; the selected organization is stored in the VaadinSession
 - **Inline organization selector** in the header navbar next to the user's name
 - **Dynamic background color** per organization: the content area background changes when switching organizations (blue, green, amber, pink, indigo)
+- **`@RequiresOrganization` annotation**: restrict views to a specific organization with nav filtering, route guards, and auto-redirect on org switch
 - **Docker Compose** setup with Keycloak and pre-configured realm with test users
 
 ## Prerequisites
@@ -71,7 +72,12 @@ my-app/
         ├── organization/
         │   ├── Organization.java
         │   ├── OrganizationService.java
-        │   └── OrganizationSelectorView.java
+        │   ├── OrganizationSelectorView.java
+        │   └── RequiresOrganization.java
+        ├── stock/
+        │   └── BlueStockView.java
+        ├── employees/
+        │   └── GreenEmployeesView.java
         ├── base/
         │   └── MainLayout.java
         └── dashboard/
@@ -88,6 +94,9 @@ my-app/
 | `OrganizationSelectorView` | Standalone view shown after login when the user belongs to multiple organizations |
 | `MainLayout` | App shell with sidebar navigation, user name, inline org selector, dynamic background color per organization, and logout button |
 | `DashboardView` | Landing page that greets the user and shows the current organization |
+| `RequiresOrganization` | Annotation to restrict a view to a specific organization (see below) |
+| `BlueStockView` | Example org-scoped view: stock grid, only accessible under Blue Corp |
+| `GreenEmployeesView` | Example org-scoped view: employee grid, only accessible under Green Inc |
 
 ## Quick Start with Docker
 
@@ -132,6 +141,39 @@ If you prefer to configure Keycloak manually instead of using the Docker setup:
    - Enable **Add to ID token**
 
 If you skip step 3, the app still works — users simply won't see the organization selector. The `AuthenticatedUser` class also falls back to reading a `groups` claim if `organizations` is not present.
+
+## Organization-Scoped Views
+
+Views can be restricted to a specific organization using the `@RequiresOrganization` annotation:
+
+```java
+@Route(value = "blue-stock", layout = MainLayout.class)
+@PermitAll
+@RequiresOrganization("Blue Corp")
+public class BlueStockView extends VerticalLayout {
+    // only accessible when Blue Corp is selected
+}
+```
+
+Three mechanisms enforce the restriction:
+
+1. **Navigation guard** — `MainLayout.beforeEnter()` checks the annotation on the target view. If the selected organization doesn't match, the user is forwarded to the dashboard.
+2. **Side nav filtering** — Navigation items are only shown for views matching the current organization. To register a new org-scoped view in the nav, add a `NavEntry` in `MainLayout`:
+   ```java
+   private static final List<NavEntry> NAV_ENTRIES = List.of(
+           new NavEntry("Dashboard", ""),
+           new NavEntry("Blue Stock", "blue-stock", "Blue Corp"),
+           new NavEntry("Green Employees", "green-employees", "Green Inc")
+   );
+   ```
+3. **Org-switch redirect** — If the user switches organization while viewing an org-restricted page, they are automatically redirected to the dashboard.
+
+### Included example views
+
+| View | Route | Organization | Content |
+|------|-------|--------------|---------|
+| `BlueStockView` | `/blue-stock` | Blue Corp | Stock management grid (SKU, product, quantity, price) |
+| `GreenEmployeesView` | `/green-employees` | Green Inc | Employee directory grid (ID, name, department, email) |
 
 ## Application Flow
 
