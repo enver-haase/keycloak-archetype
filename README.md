@@ -9,13 +9,15 @@ A Maven archetype for generating Vaadin 25.1.0-beta3 applications with Keycloak 
 - **Keycloak OIDC** login via `VaadinSecurityConfigurer.oauth2LoginPage()`
 - **OIDC-aware logout** that terminates the Keycloak session
 - **Multi-organization support**: reads an `organizations` claim (or `groups` fallback) from the ID token; if the user belongs to multiple organizations, a selector view is shown after login; the selected organization is stored in the VaadinSession
-- **Switch organization** button in the header to change organization at any time
+- **Inline organization selector** in the header navbar next to the user's name
+- **Dynamic background color** per organization: the content area background changes when switching organizations (blue, green, amber, pink, indigo)
+- **Docker Compose** setup with Keycloak and pre-configured realm with test users
 
 ## Prerequisites
 
 - Java 21+
 - Maven 3.9+
-- A running Keycloak instance
+- Docker (for the included Keycloak setup)
 
 ## Install the Archetype
 
@@ -54,6 +56,9 @@ mvn archetype:generate \
 
 ```
 my-app/
+├── docker-compose.yml
+├── keycloak/
+│   └── realm-export.json
 ├── pom.xml
 └── src/main/
     ├── resources/
@@ -81,45 +86,52 @@ my-app/
 | `AuthenticatedUser` | Extracts user info and organization list from the OIDC ID token |
 | `OrganizationService` | Manages available organizations and stores the selected one in the VaadinSession |
 | `OrganizationSelectorView` | Standalone view shown after login when the user belongs to multiple organizations |
-| `MainLayout` | App shell with sidebar navigation, user/org display, switch and logout buttons |
+| `MainLayout` | App shell with sidebar navigation, user name, inline org selector, dynamic background color per organization, and logout button |
 | `DashboardView` | Landing page that greets the user and shows the current organization |
 
-## Post-Generation Setup
+## Quick Start with Docker
 
-### 1. Set the Client Secret
+The generated project includes a `docker-compose.yml` and a pre-configured Keycloak realm with test users.
 
-Edit `src/main/resources/application.properties` and replace the placeholder:
+```bash
+cd my-app
 
-```properties
-spring.security.oauth2.client.registration.keycloak.client-secret=your-secret-here
+# Start Keycloak (port 8180)
+docker compose up -d
+
+# Wait for Keycloak to start (~10s), then run the app
+./mvnw spring-boot:run
 ```
 
-### 2. Configure Keycloak
+Open http://localhost:8080 and log in with one of the test users:
 
-In your Keycloak admin console:
+| User    | Password | Organizations          |
+|---------|----------|------------------------|
+| `alice` | `alice`  | Blue Corp, Green Inc   |
+| `bob`   | `bob`    | Blue Corp              |
+
+Alice will see the organization selector (she has two orgs). Bob will be taken directly to the dashboard (single org).
+
+The Keycloak admin console is at http://localhost:8180 (admin/admin).
+
+## Manual Keycloak Setup
+
+If you prefer to configure Keycloak manually instead of using the Docker setup:
 
 1. Create a realm (matching `keycloakRealm`)
 2. Create a client (matching `keycloakClientId`) with:
    - **Client authentication**: On
-   - **Valid redirect URIs**: `http://localhost:8080/login/oauth2/code/keycloak`
-   - **Valid post logout redirect URIs**: `http://localhost:8080`
+   - **Client secret**: must match `application.properties`
+   - **Valid redirect URIs**: `http://localhost:8080/*`
+   - **Valid post logout redirect URIs**: `http://localhost:8080/*`
    - **Web origins**: `+`
 3. Add an **organizations** claim to the ID token:
    - Go to **Client scopes** > your client's dedicated scope
-   - Add a mapper (type: "User Attribute" or "Group Membership")
+   - Add a mapper (type: "User Attribute", multivalued)
    - Set **Token claim name** to `organizations`
    - Enable **Add to ID token**
 
 If you skip step 3, the app still works — users simply won't see the organization selector. The `AuthenticatedUser` class also falls back to reading a `groups` claim if `organizations` is not present.
-
-### 3. Run the Application
-
-```bash
-cd my-app
-./mvnw spring-boot:run
-```
-
-Open http://localhost:8080 — you will be redirected to Keycloak to log in.
 
 ## Application Flow
 
@@ -128,6 +140,7 @@ Open http://localhost:8080 — you will be redirected to Keycloak to log in.
 3. After login, the user is redirected back to the app
 4. If the user belongs to multiple organizations, the **Organization Selector** view is shown
 5. After selecting an organization (or automatically if only one), the user lands on the **Dashboard**
-6. The selected organization is available to all views via `OrganizationService`
-7. Users with multiple organizations can switch via the **Switch** button in the header
-8. Logout terminates both the Vaadin session and the Keycloak session
+6. The content area background changes to the organization's color (blue, green, amber, pink, or indigo based on org index)
+7. The selected organization is available to all views via `OrganizationService`
+8. Users with multiple organizations can switch via the inline selector in the header
+9. Logout terminates both the Vaadin session and the Keycloak session

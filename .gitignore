@@ -3,3 +3,5 @@ target/
 *.iml
 .idea/
 .vscode/
+.playwright-mcp/
+*.png
