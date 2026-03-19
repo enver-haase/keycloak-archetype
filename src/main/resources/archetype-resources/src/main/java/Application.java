@@ -8,6 +8,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
 @StyleSheet(Aura.STYLESHEET)
+@StyleSheet("styles.css")
 public class Application implements AppShellConfigurator {
 
     public static void main(String[] args) {

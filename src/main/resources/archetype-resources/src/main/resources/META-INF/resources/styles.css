@@ -1,0 +1,29 @@
+/*
+ * Common application styles, loaded on top of the Aura base theme.
+ *
+ * These styles apply regardless of which organization is selected.
+ * Organization-specific overrides are in blue-corp/styles.css and
+ * green-inc/styles.css, loaded dynamically by MainLayout.
+ */
+
+/* --- Buttons: rounder corners, slightly bolder --- */
+vaadin-button {
+    --vaadin-radius-m: 20px;
+    font-weight: 600;
+}
+
+/* --- App title in the drawer --- */
+vaadin-app-layout h1 {
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+/* --- Side navigation items: rounder, with subtle hover --- */
+vaadin-side-nav-item {
+    --vaadin-radius-m: 12px;
+}
+
+/* --- Smooth transition when org background changes --- */
+html {
+    transition: --aura-background-color-light 0.5s ease;
+}

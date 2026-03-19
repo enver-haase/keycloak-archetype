@@ -1,0 +1,11 @@
+/*
+ * Blue Corp organization theme.
+ *
+ * Overrides Aura CSS custom properties to give the app a blue tint
+ * when Blue Corp is the selected organization.
+ */
+
+html {
+    --aura-background-color-light: #bfdbfe;
+    --aura-accent-color: #2563eb;
+}

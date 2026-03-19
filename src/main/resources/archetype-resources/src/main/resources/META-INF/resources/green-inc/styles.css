@@ -1,0 +1,11 @@
+/*
+ * Green Inc organization theme.
+ *
+ * Overrides Aura CSS custom properties to give the app a green tint
+ * when Green Inc is the selected organization.
+ */
+
+html {
+    --aura-background-color-light: #bbf7d0;
+    --aura-accent-color: #16a34a;
+}

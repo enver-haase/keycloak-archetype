@@ -29,6 +29,10 @@ public class SecurityConfiguration {
                 new OidcClientInitiatedLogoutSuccessHandler(clientRegistrationRepository);
         logoutSuccessHandler.setPostLogoutRedirectUri("{baseUrl}");
 
+        // Permit organization stylesheets (loaded dynamically by MainLayout)
+        http.authorizeHttpRequests(auth -> auth
+                .requestMatchers("/**/*.css").permitAll());
+
         return http.with(VaadinSecurityConfigurer.vaadin(), vaadin -> {
             vaadin.oauth2LoginPage("/oauth2/authorization/keycloak")
                   .logoutSuccessHandler(logoutSuccessHandler);
