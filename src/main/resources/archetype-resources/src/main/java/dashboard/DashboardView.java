@@ -16,10 +16,11 @@ public class DashboardView extends VerticalLayout {
     public DashboardView(AuthenticatedUser authenticatedUser,
                          OrganizationService organizationService) {
 
-        H2 welcome = new H2("Welcome, " + authenticatedUser.getDisplayName());
+        H2 welcome = new H2(getTranslation("dashboard.welcome",
+                authenticatedUser.getDisplayName()));
         add(welcome);
 
         organizationService.getSelectedOrganization().ifPresent(org ->
-                add(new Paragraph("Current organization: " + org.name())));
+                add(new Paragraph(getTranslation("dashboard.current-org", org.name()))));
     }
 }

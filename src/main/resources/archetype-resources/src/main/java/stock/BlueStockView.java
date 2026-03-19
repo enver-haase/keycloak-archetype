@@ -14,13 +14,13 @@ import jakarta.annotation.security.PermitAll;
 public class BlueStockView extends VerticalLayout {
 
     public BlueStockView() {
-        add(new H2("Blue Corp - Stock Management"));
+        add(new H2(getTranslation("blue-stock.title")));
 
         Grid<StockItem> grid = new Grid<>();
-        grid.addColumn(StockItem::sku).setHeader("SKU");
-        grid.addColumn(StockItem::name).setHeader("Product");
-        grid.addColumn(StockItem::quantity).setHeader("Quantity");
-        grid.addColumn(StockItem::price).setHeader("Price");
+        grid.addColumn(StockItem::sku).setHeader(getTranslation("blue-stock.col.sku"));
+        grid.addColumn(StockItem::name).setHeader(getTranslation("blue-stock.col.product"));
+        grid.addColumn(StockItem::quantity).setHeader(getTranslation("blue-stock.col.quantity"));
+        grid.addColumn(StockItem::price).setHeader(getTranslation("blue-stock.col.price"));
 
         grid.setItems(
                 new StockItem("BC-001", "Widget A", 150, 29.99),

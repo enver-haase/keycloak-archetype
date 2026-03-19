@@ -41,6 +41,9 @@ public abstract class AbstractIT extends TestBenchTestCase {
     @BeforeEach
     void setupDriver() {
         ChromeOptions options = new ChromeOptions();
+        // Force English locale so translations match test assertions
+        options.addArguments("--lang=en");
+        options.setExperimentalOption("prefs", java.util.Map.of("intl.accept_languages", "en"));
         if (Boolean.getBoolean("headless")) {
             options.addArguments("--headless=new", "--disable-gpu", "--no-sandbox",
                     "--window-size=1280,900");
@@ -78,11 +81,7 @@ public abstract class AbstractIT extends TestBenchTestCase {
      */
     protected void selectOrganization(String orgName) {
         $(SelectElement.class).first().selectByText(orgName);
-        $(ButtonElement.class).all().stream()
-                .filter(b -> b.getText().trim().equals("Continue"))
-                .findFirst()
-                .orElseThrow(() -> new AssertionError("Continue button not found"))
-                .click();
+        $(ButtonElement.class).id("continue-btn").click();
     }
 
     /**
@@ -99,19 +98,18 @@ public abstract class AbstractIT extends TestBenchTestCase {
         if (getDriver().getCurrentUrl().contains("select-organization")) {
             selectOrganization(org);
         }
-        // Ensure we landed on the dashboard
-        waitFor().until(d -> {
-            try { return d.findElement(By.tagName("h2")).getText().contains("Welcome"); }
-            catch (Exception e) { return false; }
-        });
+        // Ensure we landed on the dashboard (locale-independent URL check)
+        waitFor().until(d -> !d.getCurrentUrl().contains("select-organization"));
     }
 
     /**
-     * Returns the text labels of all side-nav items.
+     * Returns the route paths of all side-nav items.
+     * Uses paths (e.g., "blue-stock") rather than translated labels
+     * so tests work regardless of browser locale.
      */
-    protected List<String> getNavItemLabels() {
+    protected List<String> getNavItemPaths() {
         return $(SideNavItemElement.class).all().stream()
-                .map(item -> item.getText().trim())
+                .map(item -> item.getAttribute("path"))
                 .toList();
     }
 

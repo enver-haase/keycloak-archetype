@@ -26,14 +26,13 @@ public class OrganizationSelectorView extends VerticalLayout implements BeforeEn
         setAlignItems(Alignment.CENTER);
         setJustifyContentMode(JustifyContentMode.CENTER);
 
-        H2 title = new H2("Select Organization");
-        Paragraph description = new Paragraph(
-                "You belong to multiple organizations. Please select one to continue.");
+        H2 title = new H2(getTranslation("org.select.title"));
+        Paragraph description = new Paragraph(getTranslation("org.select.description"));
 
         List<Organization> orgs = organizationService.getAvailableOrganizations();
 
         Select<Organization> orgSelect = new Select<>();
-        orgSelect.setLabel("Organization");
+        orgSelect.setLabel(getTranslation("org.select.label"));
         orgSelect.setItems(orgs);
         orgSelect.setItemLabelGenerator(Organization::name);
         orgSelect.setWidth("300px");
@@ -41,13 +40,14 @@ public class OrganizationSelectorView extends VerticalLayout implements BeforeEn
             orgSelect.setValue(orgs.getFirst());
         }
 
-        Button continueButton = new Button("Continue", event -> {
+        Button continueButton = new Button(getTranslation("org.select.continue"), event -> {
             Organization selected = orgSelect.getValue();
             if (selected != null) {
                 organizationService.selectOrganization(selected);
                 event.getSource().getUI().ifPresent(ui -> ui.navigate(""));
             }
         });
+        continueButton.setId("continue-btn");
         continueButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
         VerticalLayout card = new VerticalLayout(title, description, orgSelect, continueButton);

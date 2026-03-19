@@ -14,13 +14,13 @@ import jakarta.annotation.security.PermitAll;
 public class GreenEmployeesView extends VerticalLayout {
 
     public GreenEmployeesView() {
-        add(new H2("Green Inc - Employees"));
+        add(new H2(getTranslation("green-employees.title")));
 
         Grid<Employee> grid = new Grid<>();
-        grid.addColumn(Employee::id).setHeader("ID");
-        grid.addColumn(Employee::name).setHeader("Name");
-        grid.addColumn(Employee::department).setHeader("Department");
-        grid.addColumn(Employee::email).setHeader("Email");
+        grid.addColumn(Employee::id).setHeader(getTranslation("green-employees.col.id"));
+        grid.addColumn(Employee::name).setHeader(getTranslation("green-employees.col.name"));
+        grid.addColumn(Employee::department).setHeader(getTranslation("green-employees.col.department"));
+        grid.addColumn(Employee::email).setHeader(getTranslation("green-employees.col.email"));
 
         grid.setItems(
                 new Employee("GI-001", "Jane Doe", "Engineering", "jane@greeninc.com"),

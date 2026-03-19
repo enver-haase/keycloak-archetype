@@ -14,15 +14,16 @@ import jakarta.annotation.security.RolesAllowed;
 public class AdminView extends VerticalLayout {
 
     public AdminView(AuthenticatedUser authenticatedUser) {
-        add(new H2("Administration"));
-        add(new Paragraph("Logged in as: " + authenticatedUser.getDisplayName()));
-        add(new Paragraph("This view is only accessible to users with the admin role."));
+        add(new H2(getTranslation("admin.title")));
+        add(new Paragraph(getTranslation("admin.logged-in-as",
+                authenticatedUser.getDisplayName())));
+        add(new Paragraph(getTranslation("admin.description")));
 
         Grid<UserInfo> grid = new Grid<>();
-        grid.addColumn(UserInfo::username).setHeader("Username");
-        grid.addColumn(UserInfo::fullName).setHeader("Full Name");
-        grid.addColumn(UserInfo::email).setHeader("Email");
-        grid.addColumn(UserInfo::organizations).setHeader("Organizations");
+        grid.addColumn(UserInfo::username).setHeader(getTranslation("admin.col.username"));
+        grid.addColumn(UserInfo::fullName).setHeader(getTranslation("admin.col.fullname"));
+        grid.addColumn(UserInfo::email).setHeader(getTranslation("admin.col.email"));
+        grid.addColumn(UserInfo::organizations).setHeader(getTranslation("admin.col.organizations"));
 
         grid.setItems(
                 new UserInfo("alice", "Alice Smith", "alice@example.com", "Blue Corp, Green Inc"),

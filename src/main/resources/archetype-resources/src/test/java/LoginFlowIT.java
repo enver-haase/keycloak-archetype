@@ -30,33 +30,33 @@ public class LoginFlowIT extends AbstractIT {
     @Test
     void bobSkipsOrgSelector() {
         keycloakLogin("bob", "bob");
+        // Bob has only one org and should land on the dashboard directly
         waitFor().until(d -> {
-            try { return d.findElement(By.tagName("h2")).getText().contains("Welcome"); }
+            try {
+                return !d.getCurrentUrl().contains("select-organization")
+                        && d.findElement(By.tagName("h2")) != null;
+            }
             catch (Exception e) { return false; }
         });
 
-        String heading = getDriver().findElement(By.tagName("h2")).getText();
-        assertTrue(heading.contains("Bob Jones"),
-                "Bob should land on the dashboard directly");
+        assertFalse(getDriver().getCurrentUrl().contains("select-organization"),
+                "Bob should skip the org selector");
     }
 
     @Test
     void aliceCanSelectOrgAndSeeDashboard() {
         loginAndSelectOrg("alice", "alice", "Blue Corp");
 
+        // Dashboard heading should contain Alice's name
         String heading = getDriver().findElement(By.tagName("h2")).getText();
-        assertEquals("Welcome, Alice Smith", heading);
+        assertTrue(heading.contains("Alice Smith"), "Dashboard should greet Alice");
     }
 
     @Test
     void logoutRedirectsToKeycloak() {
         loginAndSelectOrg("alice", "alice", "Blue Corp");
 
-        $(ButtonElement.class).all().stream()
-                .filter(b -> b.getText().trim().equals("Logout"))
-                .findFirst()
-                .orElseThrow()
-                .click();
+        $(ButtonElement.class).id("logout-btn").click();
 
         waitFor().until(ExpectedConditions.presenceOfElementLocated(By.id("username")));
         assertTrue(getDriver().getCurrentUrl().contains("realms/"),

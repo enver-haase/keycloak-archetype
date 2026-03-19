@@ -49,10 +49,10 @@ public class MainLayout extends AppLayout implements BeforeEnterObserver {
     }
 
     private static final List<NavEntry> NAV_ENTRIES = List.of(
-            new NavEntry("Dashboard", ""),
-            new NavEntry("Blue Stock", "blue-stock", "Blue Corp"),
-            new NavEntry("Green Employees", "green-employees", "Green Inc"),
-            new NavEntry("Admin", "admin", null, "ADMIN")
+            new NavEntry("nav.dashboard", ""),
+            new NavEntry("nav.blue-stock", "blue-stock", "Blue Corp"),
+            new NavEntry("nav.green-employees", "green-employees", "Green Inc"),
+            new NavEntry("nav.admin", "admin", null, "ADMIN")
     );
 
     private final AuthenticatedUser authenticatedUser;
@@ -92,7 +92,9 @@ public class MainLayout extends AppLayout implements BeforeEnterObserver {
             }
         });
 
-        Button logout = new Button("Logout", event -> authenticatedUser.logout());
+        Button logout = new Button(getTranslation("app.logout"),
+                event -> authenticatedUser.logout());
+        logout.setId("logout-btn");
 
         HorizontalLayout header = new HorizontalLayout(userName, orgSelector, logout);
         header.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.CENTER);
@@ -126,7 +128,7 @@ public class MainLayout extends AppLayout implements BeforeEnterObserver {
             boolean roleMatch = entry.requiredRole() == null
                     || authenticatedUser.hasRole(entry.requiredRole());
             if (orgMatch && roleMatch) {
-                nav.addItem(new SideNavItem(entry.label(), entry.route()));
+                nav.addItem(new SideNavItem(getTranslation(entry.label()), entry.route()));
             }
         }
     }
