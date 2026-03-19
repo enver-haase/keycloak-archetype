@@ -7,6 +7,7 @@ import ${package}.security.AuthenticatedUser;
 import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.server.VaadinRequest;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.applayout.DrawerToggle;
 import com.vaadin.flow.component.button.Button;
@@ -115,6 +116,12 @@ public class MainLayout extends AppLayout implements BeforeEnterObserver {
     @Override
     protected void onAttach(AttachEvent attachEvent) {
         super.onAttach(attachEvent);
+        // Set UI locale from the browser's Accept-Language header
+        // (overrides JVM default which may differ from the user's browser)
+        VaadinRequest request = VaadinRequest.getCurrent();
+        if (request != null) {
+            attachEvent.getUI().setLocale(request.getLocale());
+        }
         organizationService.getSelectedOrganization().ifPresent(this::switchOrgStylesheet);
     }
 
