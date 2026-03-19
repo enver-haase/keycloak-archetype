@@ -283,16 +283,36 @@ The generated project includes 15 TestBench integration tests in three suites:
 
 ### Running Tests
 
+The tests require both **Keycloak** and the **Vaadin app** to be running. Start them before running the tests:
+
 ```bash
-# Visible Chrome (app + Keycloak must be running)
-mvn verify
+# Terminal 1: Start Keycloak (wait ~10s for it to be ready)
+docker compose up -d
 
-# Headless Chrome for CI
-mvn verify -Dheadless=true
+# Terminal 2: Start the Vaadin app
+mvn spring-boot:run
 
-# Auto-start/stop the app (Keycloak must be running)
+# Terminal 3: Run tests with visible Chrome
+mvn failsafe:integration-test
+```
+
+For headless mode (CI servers):
+
+```bash
+docker compose up -d
+mvn spring-boot:run &
+# wait for app to start, then:
+mvn failsafe:integration-test -Dheadless=true
+```
+
+Alternatively, the `it` Maven profile auto-starts and stops the app around the tests (Keycloak must still be running separately):
+
+```bash
+docker compose up -d
 mvn verify -Pit -Dheadless=true
 ```
+
+**Note:** Running `mvn verify` without Keycloak and the app running will result in `ERR_CONNECTION_REFUSED` errors for all 15 tests.
 
 ## Application Flow
 
