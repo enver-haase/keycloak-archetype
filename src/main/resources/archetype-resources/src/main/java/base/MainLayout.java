@@ -2,6 +2,7 @@ package ${package}.base;
 
 import ${package}.organization.Organization;
 import ${package}.organization.OrganizationService;
+import ${package}.organization.RequiresOrganization;
 import ${package}.security.AuthenticatedUser;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.applayout.DrawerToggle;
@@ -33,8 +34,21 @@ public class MainLayout extends AppLayout implements BeforeEnterObserver, AfterN
             "#a5b4fc", // indigo
     };
 
+    private record NavEntry(String label, String route, String requiredOrg) {
+        NavEntry(String label, String route) {
+            this(label, route, null);
+        }
+    }
+
+    private static final List<NavEntry> NAV_ENTRIES = List.of(
+            new NavEntry("Dashboard", ""),
+            new NavEntry("Blue Stock", "blue-stock", "Blue Corp"),
+            new NavEntry("Green Employees", "green-employees", "Green Inc")
+    );
+
     private final OrganizationService organizationService;
     private final Select<Organization> orgSelector;
+    private final SideNav nav;
 
     public MainLayout(AuthenticatedUser authenticatedUser,
                       OrganizationService organizationService) {
@@ -62,6 +76,8 @@ public class MainLayout extends AppLayout implements BeforeEnterObserver, AfterN
             if (event.isFromClient() && event.getValue() != null) {
                 organizationService.selectOrganization(event.getValue());
                 applyOrganizationTheme(event.getValue());
+                updateNavigation();
+                redirectIfViewForbidden(event.getValue());
             }
         });
 
@@ -73,8 +89,9 @@ public class MainLayout extends AppLayout implements BeforeEnterObserver, AfterN
         header.setWidthFull();
         header.getStyle().set("padding", "0 var(--vaadin-padding-m)");
 
-        SideNav nav = createNavigation();
+        nav = new SideNav();
         nav.getStyle().set("margin", "var(--vaadin-gap-s)");
+        updateNavigation();
         Scroller scroller = new Scroller(nav);
 
         addToDrawer(appTitle, scroller);
@@ -82,10 +99,24 @@ public class MainLayout extends AppLayout implements BeforeEnterObserver, AfterN
         setPrimarySection(Section.DRAWER);
     }
 
-    private SideNav createNavigation() {
-        SideNav nav = new SideNav();
-        nav.addItem(new SideNavItem("Dashboard", "/"));
-        return nav;
+    private void updateNavigation() {
+        nav.removeAll();
+        String selectedOrg = organizationService.getSelectedOrganization()
+                .map(Organization::name).orElse("");
+        for (NavEntry entry : NAV_ENTRIES) {
+            if (entry.requiredOrg() == null || entry.requiredOrg().equals(selectedOrg)) {
+                nav.addItem(new SideNavItem(entry.label(), entry.route()));
+            }
+        }
+    }
+
+    private void redirectIfViewForbidden(Organization newOrg) {
+        if (getContent() == null) return;
+        RequiresOrganization annotation =
+                getContent().getClass().getAnnotation(RequiresOrganization.class);
+        if (annotation != null && !annotation.value().equals(newOrg.name())) {
+            getContent().getUI().ifPresent(ui -> ui.navigate(""));
+        }
     }
 
     @Override
@@ -113,6 +144,17 @@ public class MainLayout extends AppLayout implements BeforeEnterObserver, AfterN
         if (organizationService.hasMultipleOrganizations()
                 && organizationService.getSelectedOrganization().isEmpty()) {
             event.forwardTo("select-organization");
+            return;
+        }
+
+        RequiresOrganization annotation =
+                event.getNavigationTarget().getAnnotation(RequiresOrganization.class);
+        if (annotation != null) {
+            String selectedOrg = organizationService.getSelectedOrganization()
+                    .map(Organization::name).orElse("");
+            if (!annotation.value().equals(selectedOrg)) {
+                event.forwardTo("");
+            }
         }
     }
 }
