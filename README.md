@@ -78,6 +78,8 @@ my-app/
         │   └── BlueStockView.java
         ├── employees/
         │   └── GreenEmployeesView.java
+        ├── admin/
+        │   └── AdminView.java
         ├── base/
         │   └── MainLayout.java
         └── dashboard/
@@ -88,8 +90,8 @@ my-app/
 
 | Class | Description |
 |-------|-------------|
-| `SecurityConfiguration` | Configures Spring Security with Vaadin's `VaadinSecurityConfigurer`, sets up OAuth2 login and OIDC-aware logout |
-| `AuthenticatedUser` | Extracts user info and organization list from the OIDC ID token |
+| `SecurityConfiguration` | Configures Spring Security with Vaadin's `VaadinSecurityConfigurer`, sets up OAuth2 login, OIDC-aware logout, and Keycloak realm role mapping |
+| `AuthenticatedUser` | Extracts user info, organization list, and roles from the OIDC ID token |
 | `OrganizationService` | Manages available organizations and stores the selected one in the VaadinSession |
 | `OrganizationSelectorView` | Standalone view shown after login when the user belongs to multiple organizations |
 | `MainLayout` | App shell with sidebar navigation, user name, inline org selector, dynamic background color per organization, and logout button |
@@ -97,6 +99,7 @@ my-app/
 | `RequiresOrganization` | Annotation to restrict a view to a specific organization (see below) |
 | `BlueStockView` | Example org-scoped view: stock grid, only accessible under Blue Corp |
 | `GreenEmployeesView` | Example org-scoped view: employee grid, only accessible under Green Inc |
+| `AdminView` | Example role-secured view: user directory grid, only accessible to users with the `admin` Keycloak realm role (`@RolesAllowed("ADMIN")`) |
 
 ## Quick Start with Docker
 
@@ -114,12 +117,13 @@ docker compose up -d
 
 Open http://localhost:8080 and log in with one of the test users:
 
-| User    | Password | Organizations          |
-|---------|----------|------------------------|
-| `alice` | `alice`  | Blue Corp, Green Inc   |
-| `bob`   | `bob`    | Blue Corp              |
+| User    | Password   | Organizations          | Roles     |
+|---------|------------|------------------------|-----------|
+| `alice`   | `alice`    | Blue Corp, Green Inc   | *(none)*  |
+| `bob`     | `bob`      | Blue Corp              | *(none)*  |
+| `admin`   | `admin123` | Blue Corp, Green Inc   | `admin`   |
 
-Alice will see the organization selector (she has two orgs). Bob will be taken directly to the dashboard (single org).
+Alice and Bob are regular users. The `admin` user has the `admin` Keycloak realm role and can access the Admin view.
 
 The Keycloak admin console is at http://localhost:8180 (admin/admin).
 
@@ -174,6 +178,26 @@ Three mechanisms enforce the restriction:
 |------|-------|--------------|---------|
 | `BlueStockView` | `/blue-stock` | Blue Corp | Stock management grid (SKU, product, quantity, price) |
 | `GreenEmployeesView` | `/green-employees` | Green Inc | Employee directory grid (ID, name, department, email) |
+
+## Role-Based Views
+
+Views can be secured by Keycloak realm roles using Spring Security's standard `@RolesAllowed` annotation:
+
+```java
+@Route(value = "admin", layout = MainLayout.class)
+@RolesAllowed("ADMIN")
+public class AdminView extends VerticalLayout {
+    // only accessible to users with the "admin" Keycloak realm role
+}
+```
+
+The archetype includes a `GrantedAuthoritiesMapper` bean in `SecurityConfiguration` that maps Keycloak realm roles from the `roles` ID token claim to Spring Security `ROLE_` authorities. This requires the "realm roles" protocol mapper on the Keycloak client (included in the Docker realm export).
+
+Nav items can also be role-filtered by adding a `requiredRole` to the `NavEntry`:
+
+```java
+new NavEntry("Admin", "admin", null, "ADMIN")  // null org = any org, "ADMIN" = requires ADMIN role
+```
 
 ## Application Flow
 
